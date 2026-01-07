@@ -4,7 +4,7 @@ A complete containerized Apache Spark cluster with Jupyter notebooks, Scala supp
 
 ## 📊 Architecture Overview
 
-```mermaid
+```bash
 graph TB
     subgraph "Docker Bridge Network: spark-jupyter-scala_spark-net"
         subgraph "Subnet: 172.25.0.0/16"
