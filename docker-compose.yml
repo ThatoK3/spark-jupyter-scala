@@ -1,0 +1,155 @@
+services:
+  # Spark Master
+  spark-master:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+      args:
+        SPARK_VERSION: ${SPARK_VERSION}
+        HADOOP_VERSION: ${HADOOP_VERSION}
+    container_name: spark-master
+    hostname: spark-master
+    environment:
+      - SPARK_MASTER_HOST=${SPARK_MASTER_HOST}
+      - SPARK_MASTER_PORT=${SPARK_MASTER_PORT}
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+    ports:
+      - "${SPARK_MASTER_PORT}:7077"
+      - "8080:8080"  # Spark Master Web UI
+    volumes:
+      - ./data:/opt/spark/data
+      - ./scripts:/opt/scripts
+    networks:
+      spark-net:
+        ipv4_address: 172.25.0.2
+    command: ["master"]
+    deploy:
+      resources:
+        limits:
+          memory: ${SPARK_MASTER_MEMORY}
+  
+  # Spark Workers (multiple instances with unique names)
+  spark-worker-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+    hostname: spark-worker-1
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+    ports:
+      - "8081:8081"  # Worker Web UI
+    volumes:
+      - ./data:/opt/spark/data
+      - ./scripts:/opt/scripts
+    depends_on:
+      - spark-master
+    networks:
+      spark-net:
+        ipv4_address: 172.25.0.3
+    command: ["worker"]
+    deploy:
+      resources:
+        limits:
+          memory: ${SPARK_WORKER_MEMORY}
+  
+  spark-worker-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+    hostname: spark-worker-2
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+    ports:
+      - "8082:8081"  # Different external port for worker 2
+    volumes:
+      - ./data:/opt/spark/data
+      - ./scripts:/opt/scripts
+    depends_on:
+      - spark-master
+    networks:
+      spark-net:
+        ipv4_address: 172.25.0.4
+    command: ["worker"]
+    deploy:
+      resources:
+        limits:
+          memory: ${SPARK_WORKER_MEMORY}
+
+  # Livy Server
+  livy:
+    build:
+      context: .
+      dockerfile: Dockerfile.livy
+      args:
+        SPARK_VERSION: ${SPARK_VERSION}
+    container_name: livy-server
+    hostname: livy-server
+    environment:
+      - SPARK_HOME=/opt/spark
+      - HADOOP_CONF_DIR=/opt/hadoop/conf
+      - LIVY_SERVER_PORT=${LIVY_PORT}
+      - LIVY_SERVER_HOST=0.0.0.0
+      - LIVY_SESSION_TIMEOUT=${LIVY_SESSION_TIMEOUT}
+      - LIVY_IMPERSONATION_ENABLED=${LIVY_IMPERSONATION_ENABLED}
+    ports:
+      - "${LIVY_PORT}:8998"
+    volumes:
+      - ./config/livy.conf:/opt/livy/conf/livy.conf
+      - ./data:/opt/data
+    depends_on:
+      - spark-master
+    networks:
+      spark-net:
+        ipv4_address: 172.25.0.5
+    command: /opt/livy/bin/livy-server
+  
+  # Jupyter Notebook with SparkMagic
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
+        SPARK_VERSION: ${SPARK_VERSION}
+        SCALA_VERSION: ${SCALA_VERSION}
+    container_name: jupyter-spark
+    hostname: jupyter-spark
+    environment:
+      - JUPYTER_PORT=${JUPYTER_PORT}
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_HOME=/opt/spark
+      - LIVY_URL=http://livy-server:8998
+      - PYSPARK_PYTHON=python3
+      - PYSPARK_DRIVER_PYTHON=python3
+    ports:
+      - "${JUPYTER_PORT}:8888"
+      - "4040:4040"  # Spark Application UI
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./config:/home/jovyan/.sparkmagic
+      - ./data:/home/jovyan/data
+      - ./scripts:/home/jovyan/scripts
+    depends_on:
+      - spark-master
+      - livy
+    networks:
+      spark-net:
+        ipv4_address: 172.25.0.6
+    command: /home/jovyan/scripts/start-jupyter.sh
+    deploy:
+      resources:
+        limits:
+          memory: ${NOTEBOOK_MEMORY}
+
+networks:
+  spark-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SUBNET}

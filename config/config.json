@@ -1,0 +1,25 @@
+{
+  "kernel_python_credentials": {
+    "username": "",
+    "password": "",
+    "url": "http://livy-server:8998",
+    "auth": "None"
+  },
+  "kernel_scala_credentials": {
+    "username": "",
+    "password": "",
+    "url": "http://livy-server:8998",
+    "auth": "None"
+  },
+  "session_configs": {
+    "driverMemory": "1g",
+    "executorCores": 2,
+    "executorMemory": "1g",
+    "conf": {
+      "spark.master": "spark://spark-master:7077"
+    }
+  },
+  "logging_config": {
+    "version": 1
+  }
+}

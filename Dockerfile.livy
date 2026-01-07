@@ -1,0 +1,30 @@
+FROM eclipse-temurin:11-jre
+
+ENV LIVY_HOME=/opt/livy
+ENV SPARK_HOME=/opt/spark
+ENV PATH=$LIVY_HOME/bin:$PATH
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN wget https://archive.apache.org/dist/incubator/livy/0.7.1-incubating/apache-livy-0.7.1-incubating-bin.zip && \
+    unzip apache-livy-0.7.1-incubating-bin.zip && \
+    mv apache-livy-0.7.1-incubating-bin /opt/livy && \
+    rm apache-livy-0.7.1-incubating-bin.zip
+
+# FIX THIS LINE - use hardcoded version 3.5.0
+RUN wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz && \
+    tar -xvzf spark-3.5.0-bin-hadoop3.tgz && \
+    mv spark-3.5.0-bin-hadoop3 /opt/spark && \
+    rm spark-3.5.0-bin-hadoop3.tgz
+
+RUN mkdir -p /opt/livy/logs
+
+EXPOSE 8998
+
+WORKDIR /opt/livy
+
+CMD ["/opt/livy/bin/livy-server"]

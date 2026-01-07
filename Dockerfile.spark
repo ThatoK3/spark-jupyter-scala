@@ -1,0 +1,35 @@
+FROM eclipse-temurin:11-jre
+
+ENV SPARK_HOME=/opt/spark
+ENV PATH=$SPARK_HOME/bin:$PATH
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    python3 \
+    python3-pip \
+    python3-venv \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install Spark
+RUN wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz && \
+    tar -xvzf spark-3.5.0-bin-hadoop3.tgz && \
+    mv spark-3.5.0-bin-hadoop3 /opt/spark && \
+    rm spark-3.5.0-bin-hadoop3.tgz
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir --break-system-packages pyspark==3.5.0 pandas numpy
+
+# Create directories and copy scripts
+RUN mkdir -p /opt/scripts /opt/spark/data
+COPY scripts/init-spark.sh /opt/scripts/
+RUN chmod +x /opt/scripts/init-spark.sh
+
+EXPOSE 7077 8080 8081 4040 4041
+
+WORKDIR /opt/spark
+
+# Set the entrypoint to use the script
+ENTRYPOINT ["/opt/scripts/init-spark.sh"]
+CMD ["master"]
