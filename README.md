@@ -4,70 +4,68 @@ A complete containerized Apache Spark cluster with Jupyter notebooks, Scala supp
 
 ## 📊 Architecture Overview
 
-```bash
+```mermaid
 graph TB
     subgraph "Docker Bridge Network: spark-jupyter-scala_spark-net"
         subgraph "Subnet: 172.25.0.0/16"
-            SM[("Spark Master&lt;br/&gt;spark-master&lt;br/&gt;172.25.0.2&lt;br/&gt;Ports: 7077, 8080")]
-            SW1[("Spark Worker 1&lt;br/&gt;spark-worker-1&lt;br/&gt;172.25.0.3&lt;br/&gt;Port: 8081")]
-            SW2[("Spark Worker 2&lt;br/&gt;spark-worker-2&lt;br/&gt;172.25.0.4&lt;br/&gt;Port: 8082")]
-            LV[("Livy Server&lt;br/&gt;livy-server&lt;br/&gt;172.25.0.5&lt;br/&gt;Port: 8998")]
-            JP[("Jupyter Lab&lt;br/&gt;jupyter-spark&lt;br/&gt;172.25.0.6&lt;br/&gt;Port: 8888, 4040")]
+            SM[("Spark Master<br/>spark-master<br/>172.25.0.2<br/>Ports: 7077, 8080")]
+            SW1[("Spark Worker 1<br/>spark-worker-1<br/>172.25.0.3<br/>Port: 8081")]
+            SW2[("Spark Worker 2<br/>spark-worker-2<br/>172.25.0.4<br/>Port: 8082")]
+            LV[("Livy Server<br/>livy-server<br/>172.25.0.5<br/>Port: 8998")]
+            JP[("Jupyter Lab<br/>jupyter-spark<br/>172.25.0.6<br/>Ports: 8888, 4040")]
         end
     end
 
     subgraph "External Access (Host Network)"
-        H1[("Host Machine&lt;br/&gt;localhost:8080&lt;br/&gt;Spark Master UI")]
-        H2[("Host Machine&lt;br/&gt;localhost:8081&lt;br/&gt;Worker 1 UI")]
-        H3[("Host Machine&lt;br/&gt;localhost:8082&lt;br/&gt;Worker 2 UI")]
-        H4[("Host Machine&lt;br/&gt;localhost:8998&lt;br/&gt;Livy Server")]
-        H5[("Host Machine&lt;br/&gt;localhost:8888/lab&lt;br/&gt;Jupyter Lab")]
-        H6[("Host Machine&lt;br/&gt;localhost:4040&lt;br/&gt;Spark App UI")]
+        H1[("Host Machine<br/>localhost:8080<br/>Spark Master UI")]
+        H2[("Host Machine<br/>localhost:8081<br/>Worker 1 UI")]
+        H3[("Host Machine<br/>localhost:8082<br/>Worker 2 UI")]
+        H4[("Host Machine<br/>localhost:8998<br/>Livy Server")]
+        H5[("Host Machine<br/>localhost:8888/lab<br/>Jupyter Lab")]
+        H6[("Host Machine<br/>localhost:4040<br/>Spark App UI")]
     end
 
     subgraph "Data & Configuration"
-        V1[("./data&lt;br/&gt;Shared Data")]
-        V2[("./notebooks&lt;br/&gt;Jupyter Notebooks")]
-        V3[("./config&lt;br/&gt;Configuration Files")]
+        V1[("./data<br/>Shared Data")]
+        V2[("./notebooks<br/>Jupyter Notebooks")]
+        V3[("./config<br/>Configuration Files")]
     end
 
     subgraph "Internal Communication Flow"
-        JP -.-&gt;|HTTP:8998| LV
-        LV -.-&gt;|spark://master:7077| SM
-        SW1 -.-&gt;|spark://master:7077| SM
-        SW2 -.-&gt;|spark://master:7077| SM
-        JP -.-&gt;|spark://master:7077| SM
+        JP -.->|HTTP 8998| LV
+        LV -.->|spark://spark-master:7077| SM
+        SW1 -.->|spark://spark-master:7077| SM
+        SW2 -.->|spark://spark-master:7077| SM
+        JP -.->|spark://spark-master:7077| SM
     end
 
     %% External access mappings
-    SM --&gt;|Port 8080| H1
-    SW1 --&gt;|Port 8081| H2
-    SW2 --&gt;|Port 8081| H3
-    LV --&gt;|Port 8998| H4
-    JP --&gt;|Port 8888| H5
-    JP --&gt;|Port 4040| H6
+    SM -->|8080| H1
+    SW1 -->|8081| H2
+    SW2 -->|8082| H3
+    LV -->|8998| H4
+    JP -->|8888| H5
+    JP -->|4040| H6
 
     %% Volume connections
-    JP -.-&gt; V1
-    JP -.-&gt; V2
-    JP -.-&gt; V3
-    SM -.-&gt; V1
-    SW1 -.-&gt; V1
-    SW2 -.-&gt; V1
-    LV -.-&gt; V1
+    JP -.-> V1
+    JP -.-> V2
+    JP -.-> V3
+    SM -.-> V1
+    SW1 -.-> V1
+    SW2 -.-> V1
+    LV -.-> V1
 
     classDef sparkNode fill:#FF6B6B,stroke:#C92A2A,color:#fff
     classDef jupyterNode fill:#4ECDC4,stroke:#15AABF,color:#fff
-    classDef networkBox fill:#45B7D1,stroke:#2C8FAF,color:#fff
     classDef externalBox fill:#96CEB4,stroke:#74B49B,color:#000
     classDef volumeBox fill:#FFEAA7,stroke:#DDAE51,color:#000
 
-    class SM,SW1,SW2 sparkNode
+    class SM,SW1,SW2,LV sparkNode
     class JP jupyterNode
-    class LV sparkNode
-    class TB networkBox
     class H1,H2,H3,H4,H5,H6 externalBox
     class V1,V2,V3 volumeBox
+
 ```
 
  # 🏗️ Technology Stack
