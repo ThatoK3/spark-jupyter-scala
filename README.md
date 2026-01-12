@@ -165,7 +165,7 @@ spark-jupyter-scala/
 # 🔧 Configuration
 Environment Variables (.env)
 ```bash
-# Spark Configuration
+# Spark Cluster Configuration
 SPARK_MASTER_HOST=spark-master
 SPARK_MASTER_PORT=7077
 SPARK_WORKER_CORES=2
@@ -179,9 +179,25 @@ JUPYTER_TOKEN=scala-spark-2024
 JUPYTER_MEMORY_LIMIT=4g
 JUPYTER_WORK_DIR=/home/jovyan/work
 
+# Livy Configuration
+LIVY_PORT=8998
+LIVY_SESSION_TIMEOUT=1h
+LIVY_IMPERSONATION_ENABLED=false
+
 # Network Configuration
 NETWORK_NAME=spark-network
 SUBNET=172.25.0.0/16
+
+# Resource Limits
+SPARK_MASTER_MEMORY=2g
+SPARK_WORKER_MEMORY=2g
+NOTEBOOK_MEMORY=4g
+
+# Spark Version
+SPARK_VERSION=3.5.0
+HADOOP_VERSION=3
+SCALA_VERSION=2.12
+PYTHON_VERSION=3.9
 ```
 
 ### Jupyter Server Configuration
