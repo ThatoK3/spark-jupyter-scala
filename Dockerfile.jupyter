@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.9
 FROM python:${PYTHON_VERSION}-bullseye
 
-# Install system dependencies
+# Install system dependencies including PostgreSQL client libraries
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -11,9 +11,13 @@ RUN apt-get update && apt-get install -y \
     scala \
     maven \
     netcat-traditional \
+    libpq-dev \
+    gcc \
+    python3-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python packages
+# Install Python packages as root first
 RUN pip install --no-cache-dir --break-system-packages \
     jupyterlab==4.0.7 \
     notebook==7.0.6 \
@@ -26,7 +30,20 @@ RUN pip install --no-cache-dir --break-system-packages \
     numpy \
     matplotlib \
     seaborn \
-    plotly
+    plotly \
+    pymongo \
+    redis
+
+# Install Feast and PostgreSQL dependencies as root
+RUN pip install --no-cache-dir --break-system-packages \
+    feast==0.46.0 \
+    feast-postgres \
+    psycopg2-binary \
+    psycopg \
+    psycopg-pool \
+    psycopg-binary \
+    PyMySQL \
+    sqlalchemy
 
 # Set environment variables
 ENV SPARK_HOME=/opt/spark
@@ -41,7 +58,7 @@ RUN wget https://archive.apache.org/dist/spark/spark-3.5.0/spark-3.5.0-bin-hadoo
 
 # Create jovyan user and directories
 RUN useradd -m -s /bin/bash jovyan && \
-    mkdir -p /home/jovyan/work /home/jovyan/data /home/jovyan/scripts /home/jovyan/.sparkmagic && \
+    mkdir -p /home/jovyan/work /home/jovyan/data /home/jovyan/scripts /home/jovyan/.sparkmagic /home/jovyan/feature_repo && \
     chown -R jovyan:jovyan /home/jovyan
 
 # Copy scripts before switching user
@@ -52,6 +69,19 @@ RUN chmod +x /home/jovyan/scripts/start-jupyter.sh && \
 # Switch to jovyan user
 USER jovyan
 WORKDIR /home/jovyan
+
+# Reinstall packages as jovyan user to ensure they're in user site-packages
+RUN pip install --user --no-cache-dir \
+    feast==0.46.0 \
+    feast-postgres \
+    psycopg2-binary \
+    psycopg \
+    psycopg-pool \
+    psycopg-binary \
+    PyMySQL \
+    sqlalchemy \
+    redis \
+    pymongo
 
 # Install kernels
 RUN jupyter-kernelspec install --user $(python -c "import sparkmagic.kernels; import os; print(os.path.dirname(sparkmagic.kernels.__file__))")/sparkkernel && \
